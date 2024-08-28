@@ -1,0 +1,23 @@
+- hosts: all
+  remote_user: ubuntu
+  become: yes
+  tasks:
+    - name: To install a java
+      ansible.builtin.apt:
+        name: openjdk-21-jdk-headless
+        state: present
+
+    - name: Download maven tar file
+      ansible.builtin.get_url:
+        url: https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
+        dest: /opt
+        mode: '777'
+    
+    - name: Unarchive a file that is already on the remote machine
+      ansible.builtin.unarchive:
+        src: /opt/apache-maven-3.9.9
+        dest: /opt
+        remote_src: yes
+    - name: add maven to PATH
+      shell: cat /etc/profile | grep "/opt/apache-maven-3.9.9/bin" || echo "PATH=/opt/apache-maven-3.9.9/bin:$PATH" >> /etc/profile
+    
