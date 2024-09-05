@@ -1,0 +1,58 @@
+- hosts: all
+  remote_user: ubuntu
+  become: yes
+  tasks:
+    - name: Run a command as the apache user
+      command: sudo su -
+      become: true
+      become_user: /root
+
+    - name: Set a hostname specifying strategy
+      ansible.builtin.hostname:
+        name: slave1
+        use: systemd
+    
+    - name: Install a docker
+      apt:
+        name: docker.io
+        state: present
+    - name: swapoff
+      command: sudo swapoff -a
+    - name: swapoff
+      command: sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+    - name: install container and configure
+      command: "{{ item }}"
+      with_items:
+        - sudo nano /etc/modules-load.d/containerd.conf
+        - echo "overlay br_netfilter" > containerd.conf
+    - name: Update repositories
+      ansible.builtin.apt:
+        name: " * " 
+        update_cache: yes
+    - name: Add an Apt signing key
+      apt_key:
+        url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
+        state: present
+    - name: Update repositories
+      ansible.builtin.apt:
+        name: " * " 
+        update_cache: yes
+    - name: Install kubernetes
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - kubeadm
+        - kubelet
+        - kubectl
+    - name: initialise master node
+      command: kubeadm init --pod-network-cidr=10.255.10.0/16
+    - name: set up kubectl for user
+      command: "{{ item }}"
+      with_items:
+        - mkdir -p $HOME/.kube
+        - cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+        - chown $(id -u):$(id -g) $HOME/.kube/config
+    - name: Apply the Calico manifest
+      command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+      when: "'calico' in kubeadm_output.stdout"
