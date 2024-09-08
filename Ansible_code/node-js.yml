@@ -1,0 +1,47 @@
+- hosts: all
+  remote_user: ubuntu
+  become: yes
+  tasks:
+    - name: Update repositories cache and install "foo" package
+      ansible.builtin.apt:
+        name: " * "
+        update_cache: yes
+    
+    - name: Install curl
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - curl
+        - nodejs
+        - npm
+
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: /home/ubuntu/node
+        state: directory
+        mode: '0755'
+
+    - name: Install packages based on package.json.
+      community.general.npm:
+        path: /home/ubuntu/node/packages
+
+    - name: start a nodejs
+      chdir: /home/ubuntu/packages/node/node-app
+      command: npm init -y
+
+    - name: Create "app.js" file
+      template:
+        src: /home/ubuntu/app.js
+        dest: /home/ubuntu/packages/node/node-app/app.js
+        mode: 0644
+    - name: start a nodejs
+      chdir: /home/ubuntu/packages/node/node-app
+      command: npm init -y
+    
+    - name: execute a code
+      command: node app.js
+
+    
+    
+     
