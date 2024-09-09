@@ -1,0 +1,33 @@
+- hosts: win
+  remote_user: windows
+  become: yes
+  tasks:
+    - name: Create a new group
+      ansible.windows.win_group:
+        name: Team
+        description: Devops group
+        state: present
+
+    - name: create a user Len-dev on group
+      ansible.windows.win_user:
+        name: Len-dev
+        password: B0bP4ssw0rd
+        state: present
+        groups:
+          - Team
+    
+    - name: Set an account expiration date
+      ansible.windows.win_user:
+        name: Len-dev
+        state: present
+        account_expires: '2024-09-9T14:30:00Z' 
+
+    - name: Ensure user bob is absent
+      ansible.windows.win_user:
+        name: Len-dev
+        state: absent
+
+    - name: Remove a group
+      ansible.windows.win_group:
+        name: deploy
+        state: absent
